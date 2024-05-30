@@ -72,6 +72,8 @@ def main():
                     gene_column = 'gene'
                 elif 'ann.gene' in large_df.columns:
                     gene_column = 'ann.gene'
+                elif 'SYMBOL' in large_df.columns:
+                    gene_column = 'SYMBOL'
                 else:
                     st.error("The uploaded file does not contain a 'gene' or 'ann.gene' column.")
                     return
