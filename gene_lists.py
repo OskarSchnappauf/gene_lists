@@ -39,9 +39,9 @@ def main():
         st.header('File-based Gene Matcher')
 
         # Hardcoded paths for the gene list CSVs
-        said_genes_path = '/Users/oskarschnappauf/Desktop/python/streamlit/gene_lists/SAIDs_book.csv'
-        said_candidates_path = '/Users/oskarschnappauf/Desktop/python/streamlit/gene_lists/candidate_partner_genes.csv'
-        innate_genes_path = '/Users/oskarschnappauf/Desktop/python/streamlit/gene_lists/innate_genes.csv'
+        said_genes_path = 'SAIDs_book.csv'
+        said_candidates_path = 'candidate_partner_genes.csv'
+        innate_genes_path = 'innate_genes.csv'
 
         # Loading all gene lists from hardcoded CSVs
         try:
