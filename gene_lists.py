@@ -1,5 +1,8 @@
 import streamlit as st
 import pandas as pd
+import re
+import requests
+from bioservices import KEGG
 
 # Function for matching genes from text areas
 def find_matching_genes(list1, list2):
@@ -8,12 +11,73 @@ def find_matching_genes(list1, list2):
     matches = set1.intersection(set2)
     return matches
 
+# Function for KEGG pathway analysis
+def kegg_gene_list():
+    st.header("KEGG Gene List Extractor")
+
+    # User input for KEGG pathway ID
+    user_input_id = st.text_input("Enter KEGG Pathway ID (e.g., map04064 or hsa04064)", "map04064")
+    organism_prefix = st.text_input("Enter organism code (e.g., hsa for human, mmu for mouse)", "hsa")
+
+    if st.button("Fetch KEGG Genes"):
+        try:
+            # --- Normalize Pathway ID ---
+            if user_input_id.startswith("map"):
+                pathway_id = user_input_id.replace("map", organism_prefix)
+            elif user_input_id.startswith(organism_prefix):
+                pathway_id = user_input_id
+            else:
+                st.error("Invalid KEGG pathway ID. Use 'hsa04810' or 'map04810'.")
+                return
+
+            kegg = KEGG()
+            raw_kegg_data = kegg.get(pathway_id)
+            parsed_kegg = kegg.parse(raw_kegg_data)
+
+            # --- Get Pathway Name ---
+            pathway_name_list = parsed_kegg.get("NAME", ["unknown_pathway"])
+            pathway_name_raw = pathway_name_list[0] if isinstance(pathway_name_list, list) else pathway_name_list
+            st.subheader(f"Pathway Name: {pathway_name_raw}")
+
+            # --- Extract Genes ---
+            gene_entries = parsed_kegg.get("GENE", {})
+            genes = []
+
+            if isinstance(gene_entries, dict):
+                for gene_id, desc in gene_entries.items():
+                    full_description = desc[0] if isinstance(desc, list) else desc
+                    gene_symbol = full_description.split(";")[0].strip()
+                    genes.append({
+                        "GeneID": gene_id,
+                        "GeneSymbol": gene_symbol,
+                        "FullDescription": full_description
+                    })
+
+            gene_df = pd.DataFrame(genes)
+
+            if not gene_df.empty:
+                st.success(f"Extracted {len(gene_df)} genes.")
+                st.dataframe(gene_df)
+
+                # Download button for gene symbols
+                csv = gene_df[["GeneSymbol"]].to_csv(index=False).encode("utf-8")
+                st.download_button("Download Gene Symbols as CSV", csv, f"{pathway_id}_genes.csv", "text/csv")
+            else:
+                st.warning("No genes found in the pathway.")
+
+            # --- Display KEGG Pathway Image ---
+            png_url = f"https://www.kegg.jp/kegg/pathway/{organism_prefix}/{pathway_id}.png"
+            st.image(png_url, caption=f"KEGG Pathway Map: {pathway_id}", use_column_width=True)
+
+        except Exception as e:
+            st.error(f"Error fetching or parsing KEGG data: {e}")
+
 # Main function for the Streamlit app
 def main():
     st.title('Gene Matcher and Gene List Analysis App')
 
     # Sidebar menu for selecting functionality
-    menu = ["Text Area Gene Matcher", "File-based Gene Matcher"]
+    menu = ["Text Area Gene Matcher", "File-based Gene Matcher", "KEGG Gene List"]
     choice = st.sidebar.selectbox("Choose the functionality", menu)
 
     if choice == "Text Area Gene Matcher":
@@ -91,6 +155,9 @@ def main():
                 st.download_button("Download modified file", csv, "modified_large_file.csv", "text/csv", key='download-csv')
             except Exception as e:
                 st.error(f"Failed to read the large file: {e}")
+
+    elif choice == "KEGG Gene List":
+        kegg_gene_list()
 
 if __name__ == "__main__":
     main()
