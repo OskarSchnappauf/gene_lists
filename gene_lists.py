@@ -67,7 +67,7 @@ def kegg_gene_list():
 
             # --- Display KEGG Pathway Image ---
             png_url = f"https://www.kegg.jp/kegg/pathway/{organism_prefix}/{pathway_id}.png"
-            st.image(png_url, caption=f"KEGG Pathway Map: {pathway_id}", use_column_width=True)
+            st.image(png_url, caption=f"KEGG Pathway Map: {pathway_id}", use_container_width=True)
 
         except Exception as e:
             st.error(f"Error fetching or parsing KEGG data: {e}")
