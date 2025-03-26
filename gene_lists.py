@@ -59,6 +59,10 @@ def kegg_gene_list():
                 st.success(f"Extracted {len(gene_df)} genes.")
                 st.dataframe(gene_df)
 
+                # Show as comma-separated list
+                gene_list_str = ",".join(gene_df["GeneSymbol"].dropna().astype(str))
+                st.text_area("Comma-separated gene list", value=gene_list_str, height=100)
+
                 # Download button for gene symbols
                 csv = gene_df[["GeneSymbol"]].to_csv(index=False).encode("utf-8")
                 st.download_button("Download Gene Symbols as CSV", csv, f"{pathway_id}_genes.csv", "text/csv")
