@@ -213,6 +213,36 @@ def main():
 
             immune_gene_set = set(immune_gene_to_disease.keys())
 
+            # ----- interaction_partners_SAID.csv -----
+            # Format: SAID_gene,Partner_gene
+            interaction_path = 'interaction_partners_SAID.csv'
+            interaction_df = pd.read_csv(
+                interaction_path,
+                header=None,
+                names=['SAID_gene', 'Partner_gene']
+            )
+
+            interaction_df['SAID_gene_upper'] = (
+                interaction_df['SAID_gene']
+                .astype(str)
+                .str.strip()
+                .str.upper()
+            )
+            interaction_df['Partner_gene_upper'] = (
+                interaction_df['Partner_gene']
+                .astype(str)
+                .str.strip()
+                .str.upper()
+            )
+
+            # Map: Partner_gene -> semicolon-joined list of SAID genes
+            interaction_map = (
+                interaction_df
+                .groupby('Partner_gene_upper')['SAID_gene_upper']
+                .apply(lambda x: '; '.join(sorted(set(x))))
+                .to_dict()
+            )
+
         except Exception as e:
             st.error(f"Failed to load master gene lists: {e}")
             return
@@ -282,6 +312,15 @@ def main():
                 )
                 large_df['Immune disease inheritance'] = large_df[gene_column].apply(
                     lambda x: immune_gene_to_inheritance.get(normalize_key(x), '')
+                )
+
+                # ---- Annotate interaction partners (SAID genes interacting with this gene) ----
+                def said_interaction_partner(x):
+                    key = normalize_key(x)
+                    return interaction_map.get(key, '')
+
+                large_df['Interaction partner'] = large_df[gene_column].apply(
+                    said_interaction_partner
                 )
 
                 # Display the DataFrame
